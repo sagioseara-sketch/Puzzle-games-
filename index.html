@@ -39,7 +39,7 @@ button.sec{background:var(--card);color:var(--tx);border-color:var(--bd)}
 #msg.win{color:var(--ok);font-size:22px}
 .conf{position:fixed;top:-40px;z-index:20;pointer-events:none;animation:fall 2.4s ease-in forwards}
 @keyframes fall{to{transform:translateY(110vh) rotate(360deg)}}
-@media (prefers-reduced-motion:reduce){.conf{display:none}.shape svg,.dot,.q{animation:none!important}}
+@media (prefers-reduced-motion:reduce){.conf{display:none}.shape svg,.dot,.spin{animation:none!important}}
 #menu{min-height:78vh;display:flex;flex-direction:column;justify-content:center;text-align:center}
 #menu[hidden]{display:none}
 #menu h1{font-size:34px;margin:0}
@@ -50,9 +50,11 @@ button.sec{background:var(--card);color:var(--tx);border-color:var(--bd)}
 .shape svg{width:100%;height:auto;display:block;animation:bob 3.4s ease-in-out infinite}
 .shape:nth-child(2) svg{animation-delay:-1.7s}
 .tb{fill:var(--seat);stroke:var(--bd);stroke-width:2}
-.dot{transform-box:fill-box;transform-origin:center;animation:pulse 2.4s ease-in-out infinite}
+.dot{transform-box:fill-box;transform-origin:center;animation:nod 2.4s ease-in-out infinite}
+@keyframes nod{0%,100%{transform:scale(1)}50%{transform:scale(1.18)}}
 .lt{font:700 8px system-ui,sans-serif;fill:#fff;pointer-events:none}
-.q{font:800 26px system-ui,sans-serif;fill:var(--ac);transform-box:fill-box;transform-origin:center;animation:pulse 2.8s ease-in-out infinite}
+.spin{transform-box:fill-box;transform-origin:center;animation:spin 14s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
 .eye{fill:var(--tx);transform-box:fill-box;transform-origin:center;animation:blink 4s infinite}
 .mo{fill:none;stroke:var(--tx);stroke-width:2.2;stroke-linecap:round}
 @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
@@ -157,7 +159,7 @@ for(let i=ch.length-1;i>=0;i--){const t=ch.filter((_,j)=>j!=i);if(cnt(t)==1)ch=t
 const uk=new Set(ch.map(c=>c.k)),rest=sh(pool);
 for(const x of U)if(!ch.some(c=>c.w.includes(x))){const c=rest.find(c=>c.w.includes(x)&&!uk.has(c.k));if(c){ch.push(c);uk.add(c.k)}}
 while(ch.length<C.min){let best=null,bv=99;for(const c of rest){if(ch.includes(c)||uk.has(c.k))continue;const v=ch.filter(z=>z.c==c.c).length;if(v<bv){bv=v;best=c}}if(!best)break;ch.push(best);uk.add(best.k)}
-return{L,type,p,f,hid,clues:sh(ch).map(c=>c.t)};
+const oo=sh(ch);return{L,type,p,f,hid,clues:oo.map(c=>c.t),tests:oo.map(c=>c.f),who:oo.map(c=>c.w)};
 }
 let G,S,sel=null,res=null;
 const home=()=>NM.map(()=>-1);
@@ -175,6 +177,12 @@ let g,sg,tr=0;do{g=gen(L,type,dif);sg=g.clues.slice().sort().join("|")+g.f.join(
 }
 function show(n){["menu","diffP","game"].forEach(i=>$(i).hidden=i!=n);window.scrollTo(0,0)}
 function icon(k){
+const P=k=="c"?[...Array(8)].map((_,i)=>[50+39*Math.sin(i*Math.PI/4),50-39*Math.cos(i*Math.PI/4)]):XY.a.map(q=>[50+(q[0]-50)*.94,50+(q[1]-50)*.94]),Cs=["#ff6b6b","#ffa94d","#f5c518","#51cf66","#20c997","#4dabf7","#9775fa","#f783ac"],SK=["#ffdcb8","#e8b48a","#c68e63","#f3c9a0","#ffdcb8","#d9a578","#b97d55","#f3c9a0"];
+const t=k=="c"?'<circle cx="50" cy="50" r="25" class="tb"/><circle cx="50" cy="50" r="19" class="tb" style="fill:none;stroke-dasharray:3 4"/>':'<rect x="26" y="26" width="48" height="48" rx="9" class="tb"/><rect x="32" y="32" width="36" height="36" rx="6" class="tb" style="fill:none;stroke-dasharray:3 4"/>';
+const fl='<g class="spin">'+[0,1,2,3,4].map(i=>`<circle cx="${(50+6*Math.sin(i*1.2566)).toFixed(1)}" cy="${(50-6*Math.cos(i*1.2566)).toFixed(1)}" r="3.4" fill="#ff8fa3"/>`).join("")+'<circle cx="50" cy="50" r="3.2" fill="#f5c518"/></g>';
+const pe=P.map((q,i)=>{const a=Math.atan2(q[0]-50,-(q[1]-50))*180/Math.PI;return `<g transform="translate(${q[0].toFixed(1)} ${q[1].toFixed(1)}) rotate(${a.toFixed(1)})"><g class="dot" style="animation-delay:${i*.15}s"><rect x="-8" y="-9" width="16" height="5" rx="2.5" fill="#8d6e63"/><ellipse cx="0" cy="-3" rx="7" ry="4.2" fill="${Cs[i]}"/><circle cx="0" cy="1" r="4.6" fill="${SK[i]}"/></g></g>`}).join("");
+return `<svg viewBox="0 0 100 100" style="overflow:visible">${t}${fl}${pe}</svg>`}
+function icon_old(k){
 const P=k=="c"?[...Array(8)].map((_,i)=>[50+40*Math.sin(i*Math.PI/4),50-40*Math.cos(i*Math.PI/4)]):XY.a,Cs=["#ff6b6b","#ffa94d","#f5c518","#51cf66","#20c997","#4dabf7","#9775fa","#f783ac"];
 const t=k=="c"?'<circle cx="50" cy="50" r="27" class="tb"/>':'<rect x="25" y="25" width="50" height="50" rx="10" class="tb"/>';
 return `<svg viewBox="0 0 100 100">${t}<text class="q" x="50" y="59" text-anchor="middle">?</text>${P.map((q,i)=>`<g class="dot" style="animation-delay:${i*.15}s"><circle cx="${q[0]}" cy="${q[1]}" r="7.5" fill="${Cs[i]}"/><text class="lt" x="${q[0]}" y="${q[1]+2.8}" text-anchor="middle">${NM[i]}</text></g>`).join("")}</svg>`}
@@ -203,10 +211,10 @@ ft+=" Any rotation of the right arrangement counts as correct.";
 if(G.type==4)ft+=" H is not named in any statement: find H's seat by elimination.";
 $("facing").textContent=ft;
 $("clues").innerHTML="";
-G.clues.forEach(t=>{const li=el("li");li.textContent=t;$("clues").append(li)});
+G.clues.forEach((t,i)=>{const li=el("li");li.textContent=t;const m=G.mk&&G.mk[i];if(m===true||m===false){li.textContent=(m?"✓ ":"✗ ")+t;li.style.color=m?"var(--ok)":"var(--bad)"}$("clues").append(li)});
 }
 function place(o,s){
-res=null;sel=null;$("msg").textContent="";
+G.mk=null;res=null;sel=null;$("msg").textContent="";
 const old=S[o];
 if(s>=0){const v=S.indexOf(s);if(v>=0&&v!=o)S[v]=old}
 S[o]=s;render();
@@ -247,12 +255,12 @@ $("dr").onchange=snap;
 $("playB").onclick=()=>{show("game");newGame()};
 document.querySelectorAll(".shape").forEach(b=>{b.querySelector(".ic").innerHTML=icon(b.dataset.k);b.onclick=()=>{kind=b.dataset.k;setDif(dif);show("diffP")}});
 $("chk").onclick=()=>{
-const st=G.L=="b"?2:1;let best=null,bc=-1;for(let t=0;t<N;t+=st){const r=NM.map((_,i)=>S[i]==mod(G.p[i]+t));const c=r.filter(Boolean).length;if(c>bc){bc=c;best=r}}res=best;
-const n=res.filter(Boolean).length;
-if(n==8&&G.rv){G.done=true;$("msg").className="";$("msg").textContent="Matches the answer shown. No level gained."}else if(n==8){if(!G.done){LV[dif]++;saveLv()}G.done=true;const w=["Excellent!","Brilliant!","Superb!","Well done!","Perfect!","Awesome!","Genius!","Great job!","Outstanding!"];$("msg").className="win";$("msg").textContent="🎉 "+w[Math.random()*w.length|0]+" Level "+G.lv+" complete!";$("newB").textContent="Next level";celebrate()}else{$("msg").className="";$("msg").textContent=`${n}/8 correct. Red = wrong seat. Unplaced people count as wrong.`}
+const st=G.L=="b"?2:1;let best=null,bc=-1;for(let t=0;t<N;t+=st){const r=NM.map((_,i)=>S[i]==mod(G.p[i]+t));const c=r.filter(Boolean).length;if(c>bc){bc=c;best=r}}res=best;G.mk=G.tests.map((f,i)=>G.who[i].some(x=>S[x]<0)?null:!!f(S,G.f));
+const n0=res.filter(Boolean).length,n=n0==8&&!G.mk.every(m=>m===true)?7:n0;
+if(n==8&&G.rv){G.done=true;$("msg").className="";$("msg").textContent="Matches the answer shown. No level gained."}else if(n==8){if(!G.done){LV[dif]++;saveLv()}G.done=true;const w=["Excellent!","Brilliant!","Superb!","Well done!","Perfect!","Awesome!","Genius!","Great job!","Outstanding!"];$("msg").className="win";$("msg").textContent="🎉 "+w[Math.random()*w.length|0]+" Level "+G.lv+" complete!"+(S.every((s,i)=>s==G.p[i])?"":" Your seating is the answer turned round the table, which is also correct.");$("newB").textContent="Next level";celebrate()}else{$("msg").className="";$("msg").textContent=`Not solved yet: ${n}/8 in the right place. Red ring = wrong seat. ✗ = a clue your seating breaks. Unplaced people count as wrong.`}
 render();
 };
-$("rst").onclick=()=>{S=home();res=null;sel=null;$("msg").textContent="";render()};
+$("rst").onclick=()=>{G.mk=null;S=home();res=null;sel=null;$("msg").textContent="";render()};
 $("rev").onclick=()=>{G.rv=1;G.done=true;S=G.p.slice();res=null;sel=null;$("msg").textContent="Answer shown. No level gained.";render()};
 show("menu");
 </script></body></html>
