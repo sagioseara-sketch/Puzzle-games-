@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Seating Puzzle</title>
+<style>
+:root{--bg:#eef3f6;--card:#fff;--tx:#14232e;--mu:#5b6b77;--ac:#0e7c86;--ok:#16a34a;--bad:#dc2626;--bd:#c5d2db;--seat:#dfe9ef;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1a22;--card:#192832;--tx:#e6eef3;--mu:#97a9b5;--ac:#35b8c4;--bd:#2f4452;--seat:#223541;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0f1a22;--card:#192832;--tx:#e6eef3;--mu:#97a9b5;--ac:#35b8c4;--bd:#2f4452;--seat:#223541;color-scheme:dark}
+html,body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif}
+#app{max-width:460px;margin:0 auto;padding:14px 14px 40px}
+h1{font-size:22px;margin:4px 0 10px}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
+select,button{font:inherit;padding:9px 12px;border-radius:10px;border:1px solid var(--bd);background:var(--card);color:var(--tx)}
+button{background:var(--ac);color:#fff;border-color:var(--ac);font-weight:600}
+button.sec{background:var(--card);color:var(--tx);border-color:var(--bd)}
+#info{color:var(--mu);font-size:14px;margin:6px 0}
+#table{position:relative;width:100%;aspect-ratio:1;margin:10px 0}
+#table::before{content:"";position:absolute;inset:24%;background:var(--seat);border:2px solid var(--bd)}
+#table.circ::before{border-radius:50%}
+#table.sq::before{border-radius:10px}
+.seat{position:absolute;width:14%;aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;background:var(--card);border:2px dashed var(--bd);box-sizing:border-box}
+.tok{position:relative;box-sizing:border-box;width:46px;height:46px;border-radius:50%;background:var(--ac);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:18px;touch-action:none;user-select:none;-webkit-user-select:none;cursor:grab;border:3px solid transparent}
+.seat .tok{width:calc(100% + 4px);height:calc(100% + 4px);margin:-2px}
+.tok.lock{background:#4b5d6a;cursor:default}
+.tok.sel{outline:3px solid var(--tx)}
+.tok.ok{border-color:var(--ok)}
+.tok.bad{border-color:var(--bad)}
+.badge{position:absolute;bottom:-6px;right:-6px;font-size:9px;font-style:normal;background:var(--card);color:var(--tx);border:1px solid var(--bd);border-radius:6px;padding:0 3px;line-height:14px}
+.nose{position:absolute;inset:-7px;pointer-events:none}
+.nose::after{content:"";position:absolute;left:50%;top:-4px;transform:translateX(-50%);border:6px solid transparent;border-top:0;border-bottom:10px solid var(--tx)}
+.ghost{position:fixed;transform:translate(-50%,-50%);pointer-events:none;z-index:9;opacity:.85}
+#tray{display:flex;flex-wrap:wrap;gap:16px;justify-content:center;min-height:60px;padding:14px;border:2px dashed var(--bd);border-radius:12px}
+#tray:empty::before{content:"All seated";color:var(--mu)}
+#msg{min-height:24px;font-weight:600;margin:6px 0}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:12px 14px;margin-top:10px}
+#clues{padding-left:20px;margin:8px 0 0}
+#clues li{margin:6px 0}
+.hint{color:var(--mu);font-size:13px;margin:4px 0}
+#msg.win{color:var(--ok);font-size:22px}
+.conf{position:fixed;top:-40px;z-index:20;pointer-events:none;animation:fall 2.4s ease-in forwards}
+@keyframes fall{to{transform:translateY(110vh) rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.conf{display:none}.shape svg,.dot,.q{animation:none!important}}
+#menu{min-height:78vh;display:flex;flex-direction:column;justify-content:center;text-align:center}
+#menu[hidden]{display:none}
+#menu h1{font-size:34px;margin:0}
+.sub{color:var(--mu);margin:6px 0 22px}
+.shapes{display:flex;gap:14px}
+.shape{flex:1;background:var(--card);color:var(--tx);border:2px solid var(--bd);border-radius:24px;padding:14px 8px 14px;font-size:18px;font-weight:700;transition:transform .15s,border-color .15s}
+.shape:active{transform:scale(.95);border-color:var(--ac)}
+.shape svg{width:100%;height:auto;display:block;animation:bob 3.4s ease-in-out infinite}
+.shape:nth-child(2) svg{animation-delay:-1.7s}
+.tb{fill:var(--seat);stroke:var(--bd);stroke-width:2}
+.dot{transform-box:fill-box;transform-origin:center;animation:pulse 2.4s ease-in-out infinite}
+.lt{font:700 8px system-ui,sans-serif;fill:#fff;pointer-events:none}
+.q{font:800 26px system-ui,sans-serif;fill:var(--ac);transform-box:fill-box;transform-origin:center;animation:pulse 2.8s ease-in-out infinite}
+.eye{fill:var(--tx);transform-box:fill-box;transform-origin:center;animation:blink 4s infinite}
+.mo{fill:none;stroke:var(--tx);stroke-width:2.2;stroke-linecap:round}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.4)}}
+@keyframes blink{0%,92%,100%{transform:scaleY(1)}96%{transform:scaleY(.1)}}
+#diffP{min-height:80vh;text-align:center}
+#diffP[hidden]{display:none}
+#dface svg{width:170px;height:170px;display:block;margin:6px auto 0;animation:pop .35s ease-out,bob 3s ease-in-out .35s infinite}
+@keyframes pop{0%{transform:scale(.7)}60%{transform:scale(1.12)}100%{transform:scale(1)}}
+#dr{touch-action:pan-y}
+#dname{font-size:42px;font-weight:900;letter-spacing:1px;margin:6px 0 18px;color:var(--c)}
+#dr{-webkit-appearance:none;appearance:none;width:100%;height:26px;border-radius:14px;margin:14px 0;outline:0;box-shadow:0 0 0 6px var(--card);background:linear-gradient(90deg,var(--c) 0 calc(22px + (100% - 44px)*var(--v)/3),transparent 0),linear-gradient(90deg,#b9c4cc,#5b5fc7,#b0398f)}
+#dr::-webkit-slider-thumb{-webkit-appearance:none;box-sizing:border-box;width:44px;height:44px;border-radius:50%;background:var(--c);border:7px solid var(--card);box-shadow:0 2px 6px #0004}
+#dr::-moz-range-thumb{box-sizing:border-box;width:44px;height:44px;border-radius:50%;background:var(--c);border:7px solid var(--card)}
+#dnote{color:var(--mu);min-height:72px;margin:16px 8px}
+#playB{display:block;width:78%;margin:10px auto 0;background:var(--c);border-color:var(--c);border-radius:20px;font-size:38px;font-weight:900;line-height:1.05;padding:12px 10px 10px;box-shadow:0 6px 0 rgba(0,0,0,.2)}
+#playB small{display:block;font-size:17px;font-weight:700}
+#playB:active{transform:translateY(4px);box-shadow:0 2px 0 rgba(0,0,0,.2)}
+</style></head><body><div id="app">
+<div id="menu">
+<h1>Seating Puzzle</h1>
+<p class="sub">Pick a table to start</p>
+<div class="shapes">
+<button class="shape" data-k="c"><div class="ic"></div>Circular</button>
+<button class="shape" data-k="s"><div class="ic"></div>Square</button>
+</div>
+</div>
+<div id="diffP" hidden>
+<div class="row"><button id="dBack" class="sec">Back</button></div>
+<div id="dface"></div>
+<div id="dname"></div>
+<input type="range" id="dr" min="0" max="3" step="0.01" value="1" aria-label="Difficulty">
+<div id="dnote"></div>
+<button id="playB">PLAY<small id="dlv"></small></button>
+</div>
+<div id="game" hidden>
+<div class="row"><button id="backB" class="sec">Levels</button><button id="newB">New puzzle</button></div>
+<div id="info"></div>
+<div id="table"></div>
+<div class="hint">Drag a person to a seat. Or tap a person, then tap a seat. Triangle shows where the person looks.</div>
+<div id="tray"></div>
+<div class="row"><button id="chk">Check</button><button id="rst" class="sec">Reset</button><button id="rev" class="sec">Show answer</button></div>
+<div id="msg"></div>
+<div class="card"><b>Clues</b><div id="facing" class="hint"></div><ol id="clues"></ol></div>
+</div></div>
+<script>
+const N=8,NM="ABCDEFGH".split(""),$=id=>document.getElementById(id);
+const mod=x=>((x%N)+N)%N;
+const sh=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a};
+const el=(t,c)=>{const e=document.createElement(t);if(c)e.className=c;return e};
+const ORD=["","immediate","2nd","3rd"];
+const PERMS=[];(function g(a,r){if(!r.length){PERMS.push(a);return}for(let i=0;i<r.length;i++)g(a.concat(r[i]),r.slice(0,i).concat(r.slice(i+1)))})([],[1,2,3,4,5,6,7]);
+const OPP={c:[4,5,6,7,0,1,2,3],a:[4,5,6,7,0,1,2,3],b:[5,4,7,6,1,0,3,2]};
+const XY={c:[...Array(8)].map((_,i)=>[50+38*Math.sin(i*Math.PI/4),50-38*Math.cos(i*Math.PI/4)]),
+a:[[50,12],[88,12],[88,50],[88,88],[50,88],[12,88],[12,50],[12,12]],
+b:[[33,12],[67,12],[88,33],[88,67],[67,88],[33,88],[12,67],[12,33]]};
+const WD=["","immediate","second","third"],rp=(k,s)=>k==1?`to the immediate ${s} of`:`${WD[k]} to the ${s} of`;
+const BN=["","one person sits","two people sit","three people sit"],CB=["","One person sits","Two people sit","Three people sit"];
+function gen(L,type,lv){
+const p=sh([0,1,2,3,4,5,6,7]);
+let f;
+if(type==1)f=Array(8).fill(1);else if(type==2)f=Array(8).fill(0);
+else{let s;do{f=NM.map(()=>Math.random()<.5?1:0);s=f.reduce((a,b)=>a+b)}while(s<3||s>5)}
+const U=type==4?[0,1,2,3,4,5,6]:[0,1,2,3,4,5,6,7],T=n=>NM[n],C=CFG[lv],hid=sh(U).slice(0,C.hid),pool=[];
+const dr=x=>f[x]?1:-1,nbT=e=>e==1||e==7,pk=(x,y)=>x<y?x+"-"+y:y+"-"+x;
+const add=(c,k,w,t,fn)=>pool.push({c,k,w,t,f:fn});
+const rel=(x,y,sd,k)=>(q,F)=>mod(q[x]-q[y])==mod(sd*(F[y]?1:-1)*k);
+for(const x of U)for(const y of U){
+if(x==y)continue;
+const d=mod(p[x]-p[y]);
+for(let k=C.minK;k<=C.maxK;k++)for(const sd of[1,-1])if(d==mod(sd*dr(y)*k)){
+const sn=sd==1?"left":"right",base=`${T(x)} sits ${rp(k,sn)} ${T(y)}`,r=rel(x,y,sd,k);
+add("pos",pk(x,y),[x,y],k>1&&Math.random()<.4?`${CB[k-1]} between ${T(y)} and ${T(x)} when counted from the ${sn} of ${T(y)}.`:base+".",r);
+if(C.pf&&hid.includes(x))add("pf","p"+x,[x,y],`${base} and faces ${f[x]?"the centre":"outside"}.`,(q,F)=>r(q,F)&&F[x]==f[x]);
+}
+if(C.ch)for(let k=Math.max(C.minK,2);k<=C.maxK;k++)for(const sd of[1,-1]){
+const s=mod(p[x]+sd*dr(x)*k),sn=sd==1?"left":"right",pre=`The person who sits ${rp(k,sn)} ${T(x)}`,sf=(q,F)=>mod(q[x]+sd*(F[x]?1:-1)*k),ky="c"+x+"-"+y+sd+k;
+if(OPP[L][s]==p[y])add("ch",ky,[x,y],`${pre} sits exactly opposite ${T(y)}.`,(q,F)=>OPP[L][sf(q,F)]==q[y]);
+else if(nbT(mod(s-p[y])))add("ch",ky,[x,y],`${pre} is an immediate neighbour of ${T(y)}.`,(q,F)=>nbT(mod(sf(q,F)-q[y])));
+}
+if(x<y){
+if(C.nb&&nbT(d))add("nbr",pk(x,y),[x,y],Math.random()<.5?`${T(x)} and ${T(y)} are immediate neighbours.`:`${T(x)} is an immediate neighbour of ${T(y)}.`,q=>nbT(mod(q[x]-q[y])));
+if(!nbT(d)&&Math.random()<C.neg)add("neg",pk(x,y),[x,y],`${T(x)} is not an immediate neighbour of ${T(y)}.`,q=>!nbT(mod(q[x]-q[y])));
+if(OPP[L][p[x]]==p[y])add("opp",pk(x,y),[x,y],`${T(x)} sits exactly opposite ${T(y)}.`,q=>OPP[L][q[x]]==q[y]);
+if(C.bn)for(let N=1;N<=3;N++)if(d==N+1||d==7-N)add("bn",pk(x,y),[x,y],`Only ${BN[N]} between ${T(x)} and ${T(y)}.`,q=>{const e=mod(q[x]-q[y]);return e==N+1||e==7-N});
+if(C.fr&&(hid.includes(x)||hid.includes(y)))add("fr","f"+pk(x,y),[x,y],`${T(x)} and ${T(y)} face ${f[x]==f[y]?"the same direction":"opposite directions"}.`,f[x]==f[y]?(q,F)=>F[x]==F[y]:(q,F)=>F[x]!=F[y]);
+}
+}
+for(const x of U){
+const a=p.indexOf(mod(p[x]-1)),b=p.indexOf(mod(p[x]+1));
+if(U.includes(a)&&U.includes(b)&&Math.random()<C.btw)add("b3","b"+x,[x,a,b],Math.random()<.5?`${T(x)} sits between ${T(a)} and ${T(b)}.`:`${T(a)} and ${T(b)} are the immediate neighbours of ${T(x)}.`,q=>{const u=mod(q[x]-q[a]),v=mod(q[x]-q[b]);return(u==1&&v==7)||(u==7&&v==1)});
+}
+const Fs=[...Array(1<<hid.length)].map((_,m)=>{const F=f.slice();hid.forEach((h,i)=>F[h]=m>>i&1);return F});
+const AS=L=="b"?[0,1]:[0],cnt=cl=>{let c=0;for(const a of AS){const oth=[0,1,2,3,4,5,6,7].filter(v=>v!=a);for(const s of PERMS){const q=[a,...s.map(v=>oth[v-1])];for(const F of Fs)if(cl.every(o=>o.f(q,F))&&++c>1)return 2}}return c};
+let ch=[];const grp={};
+pool.forEach(c=>(grp[c.c]=grp[c.c]||[]).push(c));
+for(const g in grp)grp[g]=sh(grp[g]).sort((a,b)=>LAST.has(a.t)-LAST.has(b.t));
+const used=new Set(),skip=[],ks=Object.keys(grp);let ok=false;
+while(ks.length&&!ok){const g=ks[Math.random()*ks.length|0],c=grp[g].shift();if(!grp[g].length)ks.splice(ks.indexOf(g),1);if(used.has(c.k)){skip.push(c);continue}used.add(c.k);ch.push(c);ok=cnt(ch)==1}
+for(const c of skip){if(ok)break;ch.push(c);ok=cnt(ch)==1}
+for(let i=ch.length-1;i>=0;i--){const t=ch.filter((_,j)=>j!=i);if(cnt(t)==1)ch=t}
+const uk=new Set(ch.map(c=>c.k)),rest=sh(pool);
+for(const x of U)if(!ch.some(c=>c.w.includes(x))){const c=rest.find(c=>c.w.includes(x)&&!uk.has(c.k));if(c){ch.push(c);uk.add(c.k)}}
+while(ch.length<C.min){let best=null,bv=99;for(const c of rest){if(ch.includes(c)||uk.has(c.k))continue;const v=ch.filter(z=>z.c==c.c).length;if(v<bv){bv=v;best=c}}if(!best)break;ch.push(best);uk.add(best.k)}
+return{L,type,p,f,hid,clues:sh(ch).map(c=>c.t)};
+}
+let G,S,sel=null,res=null;
+const home=()=>NM.map(()=>-1);
+let kind="c",dif=1,LAST=new Set();const SEEN=new Set();
+const CFG=[{n:"Easy",ty:[1,2],minK:1,maxK:2,nb:1,neg:0,btw:.6,bn:0,ch:0,pf:0,fr:0,hid:0,min:6},{n:"Moderate",ty:[1,2,3],minK:1,maxK:3,nb:1,neg:.3,btw:.6,bn:1,ch:0,pf:0,fr:0,hid:0,min:7},{n:"Hard",ty:[3,4],minK:1,maxK:3,nb:1,neg:.4,btw:.6,bn:1,ch:1,pf:1,fr:1,hid:1,min:8},{n:"Extreme Hard",ty:[4],minK:2,maxK:3,nb:0,neg:.5,btw:.5,bn:1,ch:1,pf:1,fr:1,hid:2,min:9}];
+const DC=["#2fb36d","#f2992e","#ff5f57","#8e44d6"],NOTE=["Direct statements: immediate and second left/right, immediate neighbours, exactly opposite, between. Everyone's facing is told.","Adds third left/right, 'only two people sit between', 'not an immediate neighbour'. Some face the centre, some outside.","One facing is hidden. Adds chain statements like 'the person who sits third to the right of A...'.","No immediate-neighbour statements. Two facings hidden. Chain statements, and H is never named."];
+const LV=(()=>{try{const a=JSON.parse(localStorage.getItem("sp_lv"));return Array.isArray(a)&&a.length==4?a:[1,1,1,1]}catch(e){return[1,1,1,1]}})();
+const saveLv=()=>{try{localStorage.setItem("sp_lv",JSON.stringify(LV))}catch(e){}};
+function face(l){const k=DC[l];return `<svg viewBox="0 0 100 100"><circle cx="50" cy="52" r="47" fill="#fff"/>${l>1?'<path d="M18 36L12 14L36 24Z M82 36L88 14L64 24Z" fill="#111" stroke="#fff" stroke-width="6" stroke-linejoin="round"/>':""}<circle cx="50" cy="52" r="38" fill="#111"/><circle cx="50" cy="52" r="33" fill="${k}"/><ellipse cx="38" cy="48" rx="7" ry="6.5" fill="#111"/><ellipse cx="62" cy="48" rx="7" ry="6.5" fill="#111"/><circle cx="36" cy="46" r="1.8" fill="#fff"/><circle cx="60" cy="46" r="1.8" fill="#fff"/><path d="${["M38 62Q50 74 62 62","M40 65H60","M40 68Q52 64 62 58","M36 68L42 61L50 68L58 61L64 68"][l]}" fill="none" stroke="#111" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>${l>1?`<path d="${l==2?"M29 38L46 45M71 38L54 45":"M27 34L46 46M73 34L54 46"}" stroke="#111" stroke-width="5" stroke-linecap="round"/>`:""}</svg>`}
+function setDif(l,k){dif=l;const m=$("diffP");if(!k){$("dr").value=l;m.style.setProperty("--v",l)}m.style.setProperty("--c",DC[l]);$("dface").innerHTML=face(l);$("dname").textContent=CFG[l].n.toUpperCase();$("dnote").textContent=NOTE[l];$("dlv").textContent="Level "+LV[l]}
+function newGame(){
+const L=kind=="c"?"c":(Math.random()<.5?"a":"b");
+const C=CFG[dif],type=C.ty[Math.random()*C.ty.length|0];
+let g,sg,tr=0;do{g=gen(L,type,dif);sg=g.clues.slice().sort().join("|")+g.f.join("")}while(SEEN.has(sg)&&++tr<12);SEEN.add(sg);LAST=new Set(g.clues);G=g;G.lv=LV[dif];$("newB").textContent="New puzzle";S=home();sel=null;res=null;$("msg").textContent="";$("msg").className="";render();
+}
+function show(n){["menu","diffP","game"].forEach(i=>$(i).hidden=i!=n);window.scrollTo(0,0)}
+function icon(k){
+const P=k=="c"?[...Array(8)].map((_,i)=>[50+40*Math.sin(i*Math.PI/4),50-40*Math.cos(i*Math.PI/4)]):XY.a,Cs=["#ff6b6b","#ffa94d","#f5c518","#51cf66","#20c997","#4dabf7","#9775fa","#f783ac"];
+const t=k=="c"?'<circle cx="50" cy="50" r="27" class="tb"/>':'<rect x="25" y="25" width="50" height="50" rx="10" class="tb"/>';
+return `<svg viewBox="0 0 100 100">${t}<text class="q" x="50" y="59" text-anchor="middle">?</text>${P.map((q,i)=>`<g class="dot" style="animation-delay:${i*.15}s"><circle cx="${q[0]}" cy="${q[1]}" r="7.5" fill="${Cs[i]}"/><text class="lt" x="${q[0]}" y="${q[1]+2.8}" text-anchor="middle">${NM[i]}</text></g>`).join("")}</svg>`}
+function tok(o,s){
+const d=el("div","tok");d.dataset.p=o;d.textContent=NM[o];
+if(sel===o)d.classList.add("sel");
+if(res&&s>=0)d.classList.add(res[o]?"ok":"bad");
+const hd=G.hid.includes(o)&&!G.done;const b=el("i","badge");b.textContent=hd?"?":G.f[o]?"IN":"OUT";d.append(b);
+if(s>=0&&!hd){const[x,y]=XY[G.L][s];let a=Math.atan2(50-x,-(50-y))*180/Math.PI;if(!G.f[o])a+=180;const w=el("b","nose");w.style.transform=`rotate(${a}deg)`;d.append(w)}
+return d;
+}
+function render(){
+const L=G.L,tb=$("table");
+$("info").textContent=CFG[dif].n+" · Level "+G.lv+" · "+(L=="c"?"Circular table":"Square table");
+tb.className=L=="c"?"circ":"sq";tb.innerHTML="";
+for(let s=0;s<N;s++){
+const[x,y]=XY[L][s],d=el("div","seat");d.dataset.s=s;d.style.left=x+"%";d.style.top=y+"%";
+const o=S.indexOf(s);if(o>=0)d.append(tok(o,s));
+tb.append(d);
+}
+const tr=$("tray");tr.innerHTML="";
+S.forEach((s,o)=>{if(s<0)tr.append(tok(o,-1))});
+const hh=G.hid.filter(()=>!G.done),inn=NM.filter((_,i)=>G.f[i]&&!hh.includes(i)),out=NM.filter((_,i)=>!G.f[i]&&!hh.includes(i));
+let ft=`Eight persons – A, B, C, D, E, F, G and H – sit around a ${L=="c"?"circular table.":L=="a"?"square table. Four sit at the corners and four at the middle of the sides.":"square table. Two persons sit on each side."} `+(G.type==1?"All of them face the centre.":G.type==2?"All of them face outside.":`Some face the centre and some face outside. Facing the centre: ${inn.join(", ")}. Facing outside: ${out.join(", ")}.`+(hh.length?` Not told: ${hh.map(i=>NM[i]).join(", ")} – find from the statements. Same direction = both centre or both outside.`:""));
+ft+=" Any rotation of the right arrangement counts as correct.";
+if(G.type==4)ft+=" H is not named in any statement: find H's seat by elimination.";
+$("facing").textContent=ft;
+$("clues").innerHTML="";
+G.clues.forEach(t=>{const li=el("li");li.textContent=t;$("clues").append(li)});
+}
+function place(o,s){
+res=null;sel=null;$("msg").textContent="";
+const old=S[o];
+if(s>=0){const v=S.indexOf(s);if(v>=0&&v!=o)S[v]=old}
+S[o]=s;render();
+}
+let drag=null;
+document.addEventListener("pointerdown",e=>{
+const t=e.target.closest(".tok");if(!t||!G)return;
+drag={o:+t.dataset.p,x:e.clientX,y:e.clientY,g:null};e.preventDefault();
+});
+document.addEventListener("pointermove",e=>{
+if(!drag)return;
+if(!drag.g&&Math.hypot(e.clientX-drag.x,e.clientY-drag.y)>8){const g=el("div","tok ghost");g.textContent=NM[drag.o];document.body.append(g);drag.g=g}
+if(drag.g){drag.g.style.left=e.clientX+"px";drag.g.style.top=e.clientY+"px"}
+});
+document.addEventListener("pointerup",e=>{
+if(!drag)return;const d=drag;drag=null;
+if(d.g){
+d.g.remove();
+const t=document.elementFromPoint(e.clientX,e.clientY),z=t&&t.closest(".seat,#tray");
+if(z)place(d.o,z.id=="tray"?-1:+z.dataset.s);
+}else if(sel!==null&&sel!==d.o&&S[d.o]>=0){place(sel,S[d.o])}
+else{sel=sel===d.o?null:d.o;render()}
+});
+document.addEventListener("pointercancel",()=>{if(drag&&drag.g)drag.g.remove();drag=null});
+document.addEventListener("click",e=>{
+const z=e.target.closest(".seat,#tray");
+if(!z||sel===null||e.target.closest(".tok"))return;
+place(sel,z.id=="tray"?-1:+z.dataset.s);
+});
+function celebrate(){const E=["🎉","✨","🎊","⭐","🥳","🌟"];for(let i=0;i<36;i++){const s=el("span","conf");s.textContent=E[i%E.length];s.style.left=Math.random()*95+"vw";s.style.animationDelay=Math.random()*.6+"s";s.style.fontSize=(18+Math.random()*18)+"px";document.body.append(s);setTimeout(()=>s.remove(),3300)}}
+$("newB").onclick=newGame;
+$("backB").onclick=()=>{setDif(dif);show("diffP")};
+$("dBack").onclick=()=>show("menu");
+let raf=0;
+function snap(){cancelAnimationFrame(raf);const r=$("dr"),m=$("diffP"),a=+r.value,b=Math.round(a),t0=performance.now();const st=t=>{const u=Math.min(1,(t-t0)/240),e=1-Math.pow(1-u,3),v=a+(b-a)*e;r.value=v;m.style.setProperty("--v",v);if(u<1)raf=requestAnimationFrame(st);else setDif(b)};raf=requestAnimationFrame(st)}
+$("dr").oninput=()=>{cancelAnimationFrame(raf);const v=+$("dr").value,l=Math.round(v);$("diffP").style.setProperty("--v",v);if(l!=dif)setDif(l,1)};
+$("dr").onchange=snap;
+$("playB").onclick=()=>{show("game");newGame()};
+document.querySelectorAll(".shape").forEach(b=>{b.querySelector(".ic").innerHTML=icon(b.dataset.k);b.onclick=()=>{kind=b.dataset.k;setDif(dif);show("diffP")}});
+$("chk").onclick=()=>{
+const st=G.L=="b"?2:1;let best=null,bc=-1;for(let t=0;t<N;t+=st){const r=NM.map((_,i)=>S[i]==mod(G.p[i]+t));const c=r.filter(Boolean).length;if(c>bc){bc=c;best=r}}res=best;
+const n=res.filter(Boolean).length;
+if(n==8&&G.rv){G.done=true;$("msg").className="";$("msg").textContent="Matches the answer shown. No level gained."}else if(n==8){if(!G.done){LV[dif]++;saveLv()}G.done=true;const w=["Excellent!","Brilliant!","Superb!","Well done!","Perfect!","Awesome!","Genius!","Great job!","Outstanding!"];$("msg").className="win";$("msg").textContent="🎉 "+w[Math.random()*w.length|0]+" Level "+G.lv+" complete!";$("newB").textContent="Next level";celebrate()}else{$("msg").className="";$("msg").textContent=`${n}/8 correct. Red = wrong seat. Unplaced people count as wrong.`}
+render();
+};
+$("rst").onclick=()=>{S=home();res=null;sel=null;$("msg").textContent="";render()};
+$("rev").onclick=()=>{G.rv=1;G.done=true;S=G.p.slice();res=null;sel=null;$("msg").textContent="Answer shown. No level gained.";render()};
+show("menu");
+</script></body></html>
